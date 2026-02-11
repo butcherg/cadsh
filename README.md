@@ -80,6 +80,11 @@ cmake -DBUILD_MANIFOLD=GITHUB ..
 make
 ```
 
+## Acknowledgements
+
+- miniz: Public Domain
+- rapidxml: Copyright (c) 2006, 2007 Marcin Kalicinsk, MIT License
+
 ## To-Do
 
 1. Add other Manifold primitives: Minkowski
