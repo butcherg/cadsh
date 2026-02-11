@@ -8,6 +8,7 @@
 #include "meshIO.h"
 #include "mathparser.h"
 
+//use this to parse out command specs: grep "//cmd" ../src/cadsh.cpp | awk -F'//cmd' '{printf "cout << \"\t"$2 "\" << endl << endl;\n" }'
 
 std::vector<std::string> split(std::string s, std::string delim)
 {
@@ -79,18 +80,47 @@ int main(int argc, char **argv)
 {
 	std::vector<manifold::Manifold> m;
 	bool verbose = false;
+	
+	if (argc <2) {
+		std::cout << std::endl << "Usage: cadsh [cmd ...]" << std::endl << std::endl << "Commands:" << std::endl;
+		std::cout << " -input/output:" << std::endl;
+		std::cout << " --load:filename" << std::endl;
+		std::cout << " --save:filename" << std::endl;
+		std::cout << " -primitives:" << std::endl;
+		std::cout << " --cube:x,y,z[,'ctr']" << std::endl;
+		std::cout << " --cylinder:h,rl[,rh[,seg[,'ctr']]]" << std::endl;
+		std::cout << " --sphere:r[,seg]" << std::endl;
+		std::cout << " --tetrahedron" << std::endl;
+		std::cout << " --extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]" << std::endl;
+		std::cout << " --revolve:polyfilename,segments,degrees" << std::endl;
+		std::cout << " -operators (work on only last mesh):" << std::endl;
+		std::cout << " --translate:x,y,z" << std::endl;
+		std::cout << " --rotate:x,y,z" << std::endl;
+		std::cout << " --scale:s|x,y,z" << std::endl;
+		std::cout << " --simplify:s" << std::endl;
+		std::cout << " -aggregators:" << std::endl;
+		std::cout << " --union" << std::endl;
+		std::cout << " --subtract" << std::endl;
+		std::cout << " --intersect" << std::endl;
+		std::cout << " --hull" << std::endl;
+
+		exit(EXIT_SUCCESS);
+	}
 
 	for(int i=1; i<argc; i++) {
 		std::string a = std::string(argv[i]);
 		std::vector<std::string> t = split(a, ":");
 		
+
+		
 		//settings
 		
 		if (t[0] == "verbose") verbose=true;
 		
-		//input/output:
 		
-		else if (t[0] == "load") {  //cmd load:filename
+		//cmd -input/output:
+		
+		else if (t[0] == "load") {  //cmd --load:filename
 			if (t.size() >= 2) {
 				std::filesystem::path p = std::string(t[1]);
 				if (p.extension() == ".3mf") {
@@ -105,7 +135,7 @@ int main(int argc, char **argv)
 			else err("load: no parameters");
 		}
 		
-		else if (t[0] == "save") {
+		else if (t[0] == "save") {  //cmd --save:filename
 			if (t.size() >= 2) {
 				std::filesystem::path p = std::string(t[1]);
 				if (p.extension() == ".3mf") {
@@ -123,9 +153,9 @@ int main(int argc, char **argv)
 		}
 		
 		
-		//primitives:
+		//cmd -primitives:
 		
-		else if (t[0] == "cube") {  //cmd cube:x,y,z[,'ctr']
+		else if (t[0] == "cube") {  //cmd --cube:x,y,z[,'ctr']
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				double x, y, z;
@@ -146,7 +176,7 @@ int main(int argc, char **argv)
 			else err("cube: no parameters");
 		}
 		
-		else if (t[0] == "cylinder") {  //cmd cylinder:h,rl[,rh[,seg[,'ctr']]]
+		else if (t[0] == "cylinder") {  //cmd --cylinder:h,rl[,rh[,seg[,'ctr']]]
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				double h, rl, rh=-1.0;
@@ -173,7 +203,7 @@ int main(int argc, char **argv)
 			else err("cylinder: no parameters");
 		}
 		
-		else if (t[0] == "sphere") {  //cmd sphere:r[,seg]
+		else if (t[0] == "sphere") {  //cmd --sphere:r[,seg]
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				double r;
@@ -191,12 +221,12 @@ int main(int argc, char **argv)
 			else err("sphere: no parameters");
 		}
 		
-		else if (t[0] == "tetrahedron") {  //cmd tetrahedron
+		else if (t[0] == "tetrahedron") {  //cmd --tetrahedron
 			m.push_back(manifold::Manifold::Tetrahedron());
 			if (verbose) std::cout << "tetrahedron" << std::endl;
 		}
 		
-		else if (t[0] == "extrude") {  //cmd extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]
+		else if (t[0] == "extrude") {  //cmd --extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				manifold::Polygons pg;
@@ -231,7 +261,7 @@ int main(int argc, char **argv)
 			else err("extrude: no parameters");
 		}
 		
-		else if (t[0] == "revolve") {  //cmd revolve:polyfilename,segments,degrees
+		else if (t[0] == "revolve") {  //cmd --revolve:polyfilename,segments,degrees
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				manifold::Polygons pg;
@@ -256,9 +286,9 @@ int main(int argc, char **argv)
 		}
 		
 		
-		//operators (work on only last mesh):
+		//cmd -operators (work on only last mesh):
 		
-		else if (t[0] == "translate") {  //cmd translate:x,y,z
+		else if (t[0] == "translate") {  //cmd --translate:x,y,z
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
@@ -270,7 +300,7 @@ int main(int argc, char **argv)
 			}
 		}
 		
-		else if (t[0] == "rotate") {  //cmd rotate:x,y,z
+		else if (t[0] == "rotate") {  //cmd --rotate:x,y,z
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
@@ -282,7 +312,7 @@ int main(int argc, char **argv)
 			}
 		}
 		
-		else if (t[0] == "scale") { //cmd scale:s|x,y,z
+		else if (t[0] == "scale") { //cmd --scale:s|x,y,z
 			if (t.size() == 2) {
 				double s = toD(t[1]);
 				m[m.size()-1] = m[m.size()-1].Scale({s,s,s});
@@ -299,7 +329,7 @@ int main(int argc, char **argv)
 			}
 		}
 		
-		else if (t[0] == "simplify") { //cmd simplify:s
+		else if (t[0] == "simplify") { //cmd --simplify:s
 			if (t.size() == 2) {
 				double s = toD(t[1]);
 				int before = m[m.size()-1].NumTri();
@@ -310,28 +340,31 @@ int main(int argc, char **argv)
 			else err("translate: no parameter");
 		}
 		
-		else if (t[0] == "union") { //cmd union
+		
+		//cmd -aggregators:
+		
+		else if (t[0] == "union") { //cmd --union
 			manifold::Manifold u = manifold::Manifold::BatchBoolean(m, manifold::OpType::Add);
 			m.clear();
 			m.push_back(u);
 			if (verbose) std::cout << "union" << std::endl;
 		}
 		
-		else if (t[0] == "subtract") { //cmd subtract
+		else if (t[0] == "subtract") { //cmd --subtract
 			manifold::Manifold s = manifold::Manifold::BatchBoolean(m, manifold::OpType::Subtract);
 			m.clear();
 			m.push_back(s);
 			if (verbose) std::cout << "subtract" << std::endl;
 		}
 		
-		else if (t[0] == "intersect") { //cmd intersect
+		else if (t[0] == "intersect") { //cmd --intersect
 			manifold::Manifold i = manifold::Manifold::BatchBoolean(m, manifold::OpType::Intersect);
 			m.clear();
 			m.push_back(i);
 			if (verbose) std::cout << "intersect" << std::endl;
 		}
 		
-		else if (t[0] == "hull") { //cmd hull
+		else if (t[0] == "hull") { //cmd --hull
 			manifold::Manifold u = manifold::Manifold::Hull(m);
 			m.clear();
 			m.push_back(u);
