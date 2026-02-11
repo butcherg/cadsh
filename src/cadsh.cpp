@@ -97,6 +97,7 @@ int main(int argc, char **argv)
 					std::vector<manifold::MeshGL> mm =  ImportMeshes3MF(t[1]);
 					for (auto msh : mm)
 						m.push_back(manifold::Manifold(msh));
+					if (verbose) std::cout << "load:" << t[1] << std::endl;
 				}
 				else
 					std::cout << "invalid filename: " << t[1] << std::endl;
@@ -113,6 +114,7 @@ int main(int argc, char **argv)
 						mshs.push_back(mm.GetMeshGL());
 					}
 					ExportMeshes3MF(t[1], mshs);
+					if (verbose) std::cout << "save:" << t[1] << std::endl;
 				}
 				else
 					std::cout << "invalid filename: " << t[1] << std::endl;
