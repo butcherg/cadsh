@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 		
 		//input/output:
 		
-		else if (t[0] == "load") {
+		else if (t[0] == "load") {  //cmd load:filename
 			if (t.size() >= 2) {
 				std::filesystem::path p = std::string(t[1]);
 				if (p.extension() == ".3mf") {
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 		
 		//primitives:
 		
-		else if (t[0] == "cube") {  //cube:x,y,z[,'ctr']
+		else if (t[0] == "cube") {  //cmd cube:x,y,z[,'ctr']
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				double x, y, z;
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 			else err("cube: no parameters");
 		}
 		
-		else if (t[0] == "cylinder") {  //cylinder:h,rl[,rh[,seg[,'ctr']]]
+		else if (t[0] == "cylinder") {  //cmd cylinder:h,rl[,rh[,seg[,'ctr']]]
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				double h, rl, rh=-1.0;
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
 			else err("cylinder: no parameters");
 		}
 		
-		else if (t[0] == "sphere") {  //sphere:r[,seg]
+		else if (t[0] == "sphere") {  //cmd sphere:r[,seg]
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				double r;
@@ -191,12 +191,12 @@ int main(int argc, char **argv)
 			else err("sphere: no parameters");
 		}
 		
-		else if (t[0] == "tetrahedron") {  //tetrahedron
+		else if (t[0] == "tetrahedron") {  //cmd tetrahedron
 			m.push_back(manifold::Manifold::Tetrahedron());
 			if (verbose) std::cout << "tetrahedron" << std::endl;
 		}
 		
-		else if (t[0] == "extrude") {  //extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]
+		else if (t[0] == "extrude") {  //cmd extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				manifold::Polygons pg;
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 			else err("extrude: no parameters");
 		}
 		
-		else if (t[0] == "revolve") {  //revolve:polyfilename,segments,degrees
+		else if (t[0] == "revolve") {  //cmd revolve:polyfilename,segments,degrees
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				manifold::Polygons pg;
@@ -258,7 +258,7 @@ int main(int argc, char **argv)
 		
 		//operators (work on only last mesh):
 		
-		else if (t[0] == "translate") {
+		else if (t[0] == "translate") {  //cmd translate:x,y,z
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
 			}
 		}
 		
-		else if (t[0] == "rotate") {
+		else if (t[0] == "rotate") {  //cmd rotate:x,y,z
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
@@ -282,7 +282,7 @@ int main(int argc, char **argv)
 			}
 		}
 		
-		else if (t[0] == "scale") { //scale:s|(x,y,z)
+		else if (t[0] == "scale") { //cmd scale:s|x,y,z
 			if (t.size() == 2) {
 				double s = toD(t[1]);
 				m[m.size()-1] = m[m.size()-1].Scale({s,s,s});
@@ -299,7 +299,7 @@ int main(int argc, char **argv)
 			}
 		}
 		
-		else if (t[0] == "simplify") { //simplify:s
+		else if (t[0] == "simplify") { //cmd simplify:s
 			if (t.size() == 2) {
 				double s = toD(t[1]);
 				int before = m[m.size()-1].NumTri();
@@ -310,28 +310,28 @@ int main(int argc, char **argv)
 			else err("translate: no parameter");
 		}
 		
-		else if (t[0] == "union") { //union
+		else if (t[0] == "union") { //cmd union
 			manifold::Manifold u = manifold::Manifold::BatchBoolean(m, manifold::OpType::Add);
 			m.clear();
 			m.push_back(u);
 			if (verbose) std::cout << "union" << std::endl;
 		}
 		
-		else if (t[0] == "subtract") { //subtract
+		else if (t[0] == "subtract") { //cmd subtract
 			manifold::Manifold s = manifold::Manifold::BatchBoolean(m, manifold::OpType::Subtract);
 			m.clear();
 			m.push_back(s);
 			if (verbose) std::cout << "subtract" << std::endl;
 		}
 		
-		else if (t[0] == "intersect") { //intersect
+		else if (t[0] == "intersect") { //cmd intersect
 			manifold::Manifold i = manifold::Manifold::BatchBoolean(m, manifold::OpType::Intersect);
 			m.clear();
 			m.push_back(i);
 			if (verbose) std::cout << "intersect" << std::endl;
 		}
 		
-		else if (t[0] == "hull") { //hull
+		else if (t[0] == "hull") { //cmd hull
 			manifold::Manifold u = manifold::Manifold::Hull(m);
 			m.clear();
 			m.push_back(u);
