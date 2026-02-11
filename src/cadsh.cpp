@@ -91,27 +91,33 @@ int main(int argc, char **argv)
 		//input/output:
 		
 		else if (t[0] == "load") {
-			std::filesystem::path p = std::string(t[1]);
-			if (p.extension() == ".3mf") {
-				std::vector<manifold::MeshGL> mm =  ImportMeshes3MF(t[1]);
-				for (auto msh : mm)
-					m.push_back(manifold::Manifold(msh));
+			if (t.size() >= 2) {
+				std::filesystem::path p = std::string(t[1]);
+				if (p.extension() == ".3mf") {
+					std::vector<manifold::MeshGL> mm =  ImportMeshes3MF(t[1]);
+					for (auto msh : mm)
+						m.push_back(manifold::Manifold(msh));
+				}
+				else
+					std::cout << "invalid filename: " << t[1] << std::endl;
 			}
-			else
-				std::cout << "invalid filename: " << t[1] << std::endl;
+			else err("load: no parameters");
 		}
 		
 		else if (t[0] == "save") {
-			std::filesystem::path p = std::string(t[1]);
-			if (p.extension() == ".3mf") {
-				std::vector<manifold::MeshGL> mshs;
-				for (auto mm : m) {
-					mshs.push_back(mm.GetMeshGL());
+			if (t.size() >= 2) {
+				std::filesystem::path p = std::string(t[1]);
+				if (p.extension() == ".3mf") {
+					std::vector<manifold::MeshGL> mshs;
+					for (auto mm : m) {
+						mshs.push_back(mm.GetMeshGL());
+					}
+					ExportMeshes3MF(t[1], mshs);
 				}
-				ExportMeshes3MF(t[1], mshs);
+				else
+					std::cout << "invalid filename: " << t[1] << std::endl;
 			}
-			else
-				std::cout << "invalid filename: " << t[1] << std::endl;
+			else err("save: no parameters");
 		}
 		
 		
