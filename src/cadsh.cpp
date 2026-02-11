@@ -317,6 +317,20 @@ int main(int argc, char **argv)
 			if (verbose) std::cout << "union" << std::endl;
 		}
 		
+		else if (t[0] == "subtract") { //subtract
+			manifold::Manifold s = manifold::Manifold::BatchBoolean(m, manifold::OpType::Subtract);
+			m.clear();
+			m.push_back(s);
+			if (verbose) std::cout << "subtract" << std::endl;
+		}
+		
+		else if (t[0] == "intersect") { //intersect
+			manifold::Manifold i = manifold::Manifold::BatchBoolean(m, manifold::OpType::Intersect);
+			m.clear();
+			m.push_back(i);
+			if (verbose) std::cout << "intersect" << std::endl;
+		}
+		
 		else if (t[0] == "hull") { //hull
 			manifold::Manifold u = manifold::Manifold::Hull(m);
 			m.clear();
