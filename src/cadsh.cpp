@@ -1,10 +1,12 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 
 #include "manifold/manifold.h"
 #include "meshIO.h"
+#include "mathparser.h"
 
 
 std::vector<std::string> split(std::string s, std::string delim)
@@ -29,33 +31,66 @@ std::vector<std::string> split(std::string s, std::string delim)
 	return v;
 }
 
-double toD(std::string s)
-{
-	return (double) atof(s.c_str());
-}
-
-double toI(std::string s)
-{
-	return atoi(s.c_str());
-}
-
 void err(std::string msg)
 {
 	std::cout << msg << std::endl;
 	exit(EXIT_FAILURE);
 }
 
+double toD(std::string s)
+{
+	Parser p;
+	float a;
+	if (!p.parse(s,a))
+		err("parse error");
+	return (double) a;
+}
+
+int toI(std::string s)
+{
+	Parser p;
+	float a;
+	if (!p.parse(s,a))
+		err("parse error");
+	return (int) a;
+}
+
+manifold::SimplePolygon loadpoly(std::string filename)
+{
+	manifold::SimplePolygon s;
+	
+	std::ifstream inputFile(filename);
+	if (inputFile.is_open()) {
+		std::string line;
+		while (getline(inputFile, line)) {
+			std::vector<std::string> l = split(line, ",");
+			if (l.size() < 2) err("malformed polygon");
+			s.push_back({atof(l[0].c_str()), atof(l[1].c_str())});
+		}
+		inputFile.close();
+	}
+	else err("polygon file load unsuccessful");
+	return s;
+}
+
+
+
 int main(int argc, char **argv)
 {
 	std::vector<manifold::Manifold> m;
+	bool verbose = false;
 
 	for(int i=1; i<argc; i++) {
 		std::string a = std::string(argv[i]);
 		std::vector<std::string> t = split(a, ":");
 		
+		//settings
+		
+		if (t[0] == "verbose") verbose=true;
+		
 		//input/output:
 		
-		if (t[0] == "load") {
+		else if (t[0] == "load") {
 			std::filesystem::path p = std::string(t[1]);
 			if (p.extension() == ".3mf") {
 				std::vector<manifold::MeshGL> mm =  ImportMeshes3MF(t[1]);
@@ -66,7 +101,7 @@ int main(int argc, char **argv)
 				std::cout << "invalid filename: " << t[1] << std::endl;
 		}
 		
-		if (t[0] == "save") {
+		else if (t[0] == "save") {
 			std::filesystem::path p = std::string(t[1]);
 			if (p.extension() == ".3mf") {
 				std::vector<manifold::MeshGL> mshs;
@@ -82,19 +117,28 @@ int main(int argc, char **argv)
 		
 		//primitives:
 		
-		else if (t[0] == "cube") {  //cube:x,y,z
+		else if (t[0] == "cube") {  //cube:x,y,z[,'ctr']
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
-				if (p.size() == 3) {
-					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
-					m.push_back(manifold::Manifold::Cube({x,y,z}));
+				double x, y, z;
+				bool ctr;
+				if (p.size() >= 3) {
+					x =toD(p[0]); y = toD(p[1]); z = toD(p[2]);
+					
 				}
-				else err("cube: invalid parameters");
+				else err("cube: insufficient parameters");
+				if (p.size() >=4) {
+					if (p[3] == "ctr")
+						ctr = true;
+				}
+				
+				m.push_back(manifold::Manifold::Cube({x,y,z}, ctr));
+				if (verbose) std::cout << "cube: " << x << "," << y << "," << z << std::endl;
 			}
 			else err("cube: no parameters");
 		}
 		
-		else if (t[0] == "cylinder") {  //cylinder:h,rl[,rh[,seg[,ctr]]]
+		else if (t[0] == "cylinder") {  //cylinder:h,rl[,rh[,seg[,'ctr']]]
 			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				double h, rl, rh=-1.0;
@@ -112,38 +156,119 @@ int main(int argc, char **argv)
 					seg = toI(p[3]);
 				}
 				if (p.size() >= 5) {
-					if (p[4] == "true")
+					if (p[4] == "center")
 						ctr = true;
-					else if (p[4] == "false")
-						ctr = false;
 				}
 				m.push_back(manifold::Manifold::Cylinder(h, rl, rh, seg, ctr));
+				if (verbose) std::cout << "cylinder: " << h << "," << rl << "," << rh << std::endl;
 			}
 			else err("cylinder: no parameters");
 		}
 		
+		else if (t[0] == "sphere") {  //sphere:r[,seg]
+			if (t.size() >= 2) {
+				std::vector<std::string> p = split(t[1], ",");
+				double r;
+				int seg=0;
+				if (p.size() >= 1) {
+					r = toD(p[0]);
+				}
+				else err("sphere: needs at least r");
+				if (p.size() >= 2) {
+					seg = toI(p[1]);
+				}
+				m.push_back(manifold::Manifold::Sphere(r, seg));
+				if (verbose) std::cout << "sphere: " << r << std::endl;
+			}
+			else err("sphere: no parameters");
+		}
 		
-		//operators:
+		else if (t[0] == "tetrahedron") {  //tetrahedron
+			m.push_back(manifold::Manifold::Tetrahedron());
+			if (verbose) std::cout << "tetrahedron" << std::endl;
+		}
+		
+		else if (t[0] == "extrude") {  //extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]
+			if (t.size() >= 2) {
+				std::vector<std::string> p = split(t[1], ",");
+				manifold::Polygons pg;
+				double h;
+				int d=0;
+				double t=0.0;
+				manifold::vec2 s = {1,1};
+		
+				if (p.size() >= 2) {
+					pg.push_back(loadpoly(p[0]));
+					h = toD(p[1]);
+				}
+				else err("extrude: needs at least polygon and h");
+				if (p.size() >= 3) {
+					d = toI(p[2]);
+				}
+				if (p.size() >= 4) {
+					t = toI(p[3]);
+				}
+				if (p.size() >= 5) {
+					std::vector<std::string> ss = split(p[4], "|");
+					if (ss.size() >= 2) {
+						s[0] = toD(ss[0]);
+						s[0] = toD(ss[1]);
+					}
+					else err("extrude: malformed scale");
+				}
+				
+				m.push_back(manifold::Manifold::Extrude(pg, h, d, t, s));
+				if (verbose) std::cout << "extrude" << std::endl;
+			}
+			else err("extrude: no parameters");
+		}
+		
+		else if (t[0] == "revolve") {  //revolve:polyfilename,segments,degrees
+			if (t.size() >= 2) {
+				std::vector<std::string> p = split(t[1], ",");
+				manifold::Polygons pg;
+				int seg=0;
+				double d =360.0;
+		
+				if (p.size() >= 1) {
+					pg.push_back(loadpoly(p[0]));
+				}
+				else err("revolve: needs at least polygon");
+				if (p.size() >= 2) {
+					seg = toI(p[1]);
+				}
+				if (p.size() >= 3) {
+					d = toI(p[2]);
+				}
+				
+				m.push_back(manifold::Manifold::Revolve(pg, seg, d));
+				if (verbose) std::cout << "revolve" << std::endl;
+			}
+			else err("revolve: no parameters");
+		}
+		
+		
+		//operators (work on only last mesh):
 		
 		else if (t[0] == "translate") {
-			if (t.size() >= 3) {
+			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
 					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
-					for (auto &mm : m) 
-						mm = mm.Translate({x,y,z});
+					m[m.size()-1] = m[m.size()-1].Translate({x,y,z}); 
+					if (verbose) std::cout << "translate: " << x << "," << y << "," << z << std::endl;
 				}
 				else err("translate: invalid parameters");
 			}
 		}
 		
 		else if (t[0] == "rotate") {
-			if (t.size() >= 3) {
+			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
 					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
-					for (auto &mm : m) 
-						mm = mm.Rotate(x,y,z);
+					m[m.size()-1] = m[m.size()-1].Rotate(x,y,z);
+					if (verbose) std::cout << "rotate: " << x << "," << y << "," << z << std::endl;
 				}
 				else err("rotate: invalid parameters");
 			}
@@ -152,15 +277,15 @@ int main(int argc, char **argv)
 		else if (t[0] == "scale") { //scale:s|(x,y,z)
 			if (t.size() == 2) {
 				double s = toD(t[1]);
-				for (auto &mm : m) 
-					mm = mm.Scale({s,s,s});
+				m[m.size()-1] = m[m.size()-1].Scale({s,s,s});
+				if (verbose) std::cout << "scale: " << s << std::endl;
 			}
 			else if (t.size() >= 3) {
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
 					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
-					for (auto &mm : m) 
-						mm = mm.Scale({x,y,z});
+					m[m.size()-1] = m[m.size()-1].Scale({x,y,z});
+					if (verbose) std::cout << "scale: " << x << "," << y << "," << z << std::endl;
 				}
 				else err("translate: invalid parameters");
 			}
@@ -169,10 +294,26 @@ int main(int argc, char **argv)
 		else if (t[0] == "simplify") { //simplify:s
 			if (t.size() == 2) {
 				double s = toD(t[1]);
-				for (auto &mm : m) 
-					mm = mm.Simplify(s);
+				int before = m[m.size()-1].NumTri();
+				m[m.size()-1] = m[m.size()-1].Simplify(s);
+				int after = m[m.size()-1].NumTri();
+				if (verbose) std::cout << "simplify: " << s << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
 			else err("translate: no parameter");
+		}
+		
+		else if (t[0] == "union") { //union
+			manifold::Manifold u = manifold::Manifold::BatchBoolean(m, manifold::OpType::Add);
+			m.clear();
+			m.push_back(u);
+			if (verbose) std::cout << "union" << std::endl;
+		}
+		
+		else if (t[0] == "hull") { //hull
+			manifold::Manifold u = manifold::Manifold::Hull(m);
+			m.clear();
+			m.push_back(u);
+			if (verbose) std::cout << "hull" << std::endl;
 		}
 	}
 	
