@@ -7,6 +7,7 @@
 #include "manifold/manifold.h"
 #include "meshIO.h"
 #include "mathparser.h"
+#include "heightmap.h"
 
 //use this to parse out command specs: grep "//cmd" ../src/cadsh.cpp | awk -F'//cmd' '{printf "cout << \"\t"$2 "\" << endl << endl;\n" }'
 
@@ -80,6 +81,7 @@ int main(int argc, char **argv)
 {
 	std::vector<manifold::Manifold> m;
 	bool verbose = false;
+	bool all = false;
 	
 	if (argc <2) {
 		std::cout << std::endl << "Usage: cadsh [cmd ...]" << std::endl << std::endl << "Commands:" << std::endl;
@@ -117,6 +119,12 @@ int main(int argc, char **argv)
 		
 		if (t[0] == "verbose") verbose=true;
 		
+		else if (t[0] == "transform")
+			if (t[1] == "all")
+				all=true;
+			else
+				all=false;
+		
 		
 		//cmd -input/output:
 		
@@ -127,6 +135,17 @@ int main(int argc, char **argv)
 					std::vector<manifold::MeshGL> mm =  ImportMeshes3MF(t[1]);
 					for (auto msh : mm)
 						m.push_back(manifold::Manifold(msh));
+					if (verbose) std::cout << "load:" << t[1] << std::endl;
+				}
+				else if (p.extension() == ".stl") {
+					manifold::MeshGL msh = ImportMeshSTL(t[1]);
+					if (msh.Merge()) 
+						if (verbose) 
+							std::cout << "load: STL file fixed" << std::endl;
+					manifold::Manifold mm(msh);
+					if (mm.Status() != manifold::Manifold::Error::NoError)
+						err("load: STL too borked to make a Manifold");
+					m.push_back(mm);
 					if (verbose) std::cout << "load:" << t[1] << std::endl;
 				}
 				else
@@ -293,7 +312,11 @@ int main(int argc, char **argv)
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
 					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
-					m[m.size()-1] = m[m.size()-1].Translate({x,y,z}); 
+					if (all)
+						for (auto &mm : m)
+							mm = mm.Translate({x,y,z}); 
+					else
+						m[m.size()-1] = m[m.size()-1].Translate({x,y,z}); 
 					if (verbose) std::cout << "translate: " << x << "," << y << "," << z << std::endl;
 				}
 				else err("translate: invalid parameters");
@@ -305,7 +328,11 @@ int main(int argc, char **argv)
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
 					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
-					m[m.size()-1] = m[m.size()-1].Rotate(x,y,z);
+					if (all)
+						for (auto &mm : m)
+							mm = mm.Rotate(x,y,z); 
+					else
+						m[m.size()-1] = m[m.size()-1].Rotate(x,y,z);
 					if (verbose) std::cout << "rotate: " << x << "," << y << "," << z << std::endl;
 				}
 				else err("rotate: invalid parameters");
@@ -313,20 +340,28 @@ int main(int argc, char **argv)
 		}
 		
 		else if (t[0] == "scale") { //cmd --scale:s|x,y,z
-			if (t.size() == 2) {
-				double s = toD(t[1]);
-				m[m.size()-1] = m[m.size()-1].Scale({s,s,s});
-				if (verbose) std::cout << "scale: " << s << std::endl;
-			}
-			else if (t.size() >= 3) {
+			manifold::vec3 s;
+			if (t.size() >= 2) {
 				std::vector<std::string> p = split(t[1], ",");
-				if (p.size() == 3) {
-					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
-					m[m.size()-1] = m[m.size()-1].Scale({x,y,z});
-					if (verbose) std::cout << "scale: " << x << "," << y << "," << z << std::endl;
+				if (p.size() == 1) {
+					s[0] = s[1] =s[2] = toD(t[1]);
 				}
-				else err("translate: invalid parameters");
+				else if (p.size() == 3) {
+					s.x =toD(p[0]); s.y = toD(p[1]); s.z = toD(p[2]);
+				}
+				else {
+					err("scale: malformed parameters");
+				}
 			}
+			else err("scale: no parameters");
+			
+			if (all)
+				for (auto &mm : m)
+					mm = mm.Scale(s); 
+			else
+				m[m.size()-1] = m[m.size()-1].Scale(s);
+			
+			if (verbose) std::cout << "scale: " << s.x << "," << s.y << "," << s.z << std::endl;
 		}
 		
 		else if (t[0] == "simplify") { //cmd --simplify:s
@@ -337,7 +372,51 @@ int main(int argc, char **argv)
 				int after = m[m.size()-1].NumTri();
 				if (verbose) std::cout << "simplify: " << s << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
-			else err("translate: no parameter");
+			else err("simplify: no parameter");
+		}
+		
+		else if (t[0] == "refine") { //cmd --refine:n
+			if (t.size() == 2) {
+				int n = toI(t[1]);
+				m[m.size()-1] = m[m.size()-1].Refine(n);
+				if (verbose) std::cout << "refine: " << n << std::endl;
+			}
+			else err("refine: no parameter");
+		}
+		
+		else if (t[0] == "refinetolength") { //cmd --refinetolength:l
+			if (t.size() == 2) {
+				double l = toD(t[1]);
+				m[m.size()-1] = m[m.size()-1].RefineToLength(l);
+				if (verbose) std::cout << "refinetolength: " << l << std::endl;
+			}
+			else err("refinetolength: no parameter");
+		}
+		
+		else if (t[0] == "refinetotolerance") { //cmd --refinetotolerance:t
+			if (t.size() == 2) {
+				double tl = toD(t[1]);
+				m[m.size()-1] = m[m.size()-1].RefineToTolerance(tl);
+				if (verbose) std::cout << "refinetotolerance: " << tl << std::endl;
+			}
+			else err("refinetotolerance: no parameter");
+		}
+		
+		else if (t[0] == "smoothout") { //cmd --smoothout:[msa[,ms]]
+			double msa=60.0;
+			double ms=0;
+			if (t.size() == 2) {
+				std::vector<std::string> p = split(t[1], ",");
+				
+				if (p.size() >= 1) {
+					msa = toD(p[0]);
+				}
+				if (p.size() >= 2) {
+					ms = toD(p[1]);
+				}
+			}
+			m[m.size()-1] = m[m.size()-1].SmoothOut(msa, ms);
+			if (verbose) std::cout << "smoothout: " << msa << "," << ms << std::endl;
 		}
 		
 		
