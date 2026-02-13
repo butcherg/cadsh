@@ -57,6 +57,70 @@ int toI(std::string s)
 	return (int) a;
 }
 
+unsigned addVertex(manifold::MeshGL &mesh, double x, double y, double z)
+{
+	unsigned idx = mesh.vertProperties.size();
+	mesh.vertProperties.insert(mesh.vertProperties.end(), { (float) x, (float) y, (float) z} );
+	return idx/3;
+}	
+
+unsigned addTriangle(manifold::MeshGL &mesh, unsigned a, unsigned b, unsigned c)
+{
+	unsigned idx = mesh.triVerts.size();
+	mesh.triVerts.insert(mesh.triVerts.end(), { a, b, c});
+	return idx/3;
+}
+
+manifold::MeshGL icosahedron()
+{
+  manifold::MeshGL mesh;
+  mesh.numProp = 3;
+
+  float phi = (1.0f + sqrt(5.0f)) * 0.5f; // golden ratio
+  float a = 1.0f;
+  float b = 1.0f / phi;
+
+  // add vertices
+  auto v1  = addVertex(mesh, 0, b, -a);
+  auto v2  = addVertex(mesh, b, a, 0);
+  auto v3  = addVertex(mesh, -b, a, 0);
+  auto v4  = addVertex(mesh, 0, b, a);
+  auto v5  = addVertex(mesh, 0, -b, a);
+  auto v6  = addVertex(mesh, -a, 0, b);
+  auto v7  = addVertex(mesh, 0, -b, -a);
+  auto v8  = addVertex(mesh, a, 0, -b);
+  auto v9  = addVertex(mesh, a, 0, b);
+  auto v10 = addVertex(mesh, -a, 0, -b);
+  auto v11 = addVertex(mesh, b, -a, 0);
+  auto v12 = addVertex(mesh, -b, -a, 0);
+
+  //project_to_unit_sphere(mesh);
+
+  // add triangles
+  addTriangle(mesh, v3, v2, v1);
+  addTriangle(mesh, v2, v3, v4);
+  addTriangle(mesh, v6, v5, v4);
+  addTriangle(mesh, v5, v9, v4);
+  addTriangle(mesh, v8, v7, v1);
+  addTriangle(mesh, v7, v10, v1);
+  addTriangle(mesh, v12, v11, v5);
+  addTriangle(mesh, v11, v12, v7);
+  addTriangle(mesh, v10, v6, v3);
+  addTriangle(mesh, v6, v10, v12);
+  addTriangle(mesh, v9, v8, v2);
+  addTriangle(mesh, v8, v9, v11);
+  addTriangle(mesh, v3, v6, v4);
+  addTriangle(mesh, v9, v2, v4);
+  addTriangle(mesh, v10, v3, v1);
+  addTriangle(mesh, v2, v8, v1);
+  addTriangle(mesh, v12, v10, v7);
+  addTriangle(mesh, v8, v11, v7);
+  addTriangle(mesh, v6, v12, v5);
+  addTriangle(mesh, v11, v9, v5);
+
+  return mesh;
+}
+
 manifold::SimplePolygon loadpoly(std::string filename)
 {
 	manifold::SimplePolygon s;
@@ -240,6 +304,13 @@ int main(int argc, char **argv)
 			else err("sphere: no parameters");
 		}
 		
+		else if (t[0] == "icosahedron") {  //cmd --tetrahedron
+			manifold::MeshGL mesh = icosahedron();
+			//std::cout << "numPts: " << mesh.NumVert() << "  numTris: " << mesh.NumTri() << std::endl;
+			m.push_back(manifold::Manifold(mesh));
+			if (verbose) std::cout << "icosahedron" << std::endl;
+		}
+		
 		else if (t[0] == "tetrahedron") {  //cmd --tetrahedron
 			m.push_back(manifold::Manifold::Tetrahedron());
 			if (verbose) std::cout << "tetrahedron" << std::endl;
@@ -307,25 +378,15 @@ int main(int argc, char **argv)
 		else if (t[0] == "heightmap") {  //cmd --revolve:polyfilename,segments,degrees
 			if (t.size() >= 2) {
 				
-				/*
-				manifold::MeshGL mesh = heightmap2mesh(t[1]);
-				//ExportMesh3MF("test.3mf", mesh);
-				std::cout << "points: " << mesh.NumVert() << "(" << mesh.vertProperties.size() << ")  triangles: " << mesh.NumTri() << "(" << mesh.triVerts.size() << ")" << std::endl;
-				if( mesh.Merge()) std::cout << "heightmap: mesh fixed" << std::endl;
-				*/
-				
 				std::pair<std::vector<vec3f>, std::vector<vec3i>> msh = heightmap2Mesh(t[1], 1);
 				auto points = msh.first;
 				auto triangles = msh.second;
-			
-				//load texture mesh into a Manifold object:
+
 				manifold::MeshGL mesh;
 				for (auto p : points) 
 					mesh.vertProperties.insert(mesh.vertProperties.end(), {p.x, p.y, p.z});
 				for (auto t : triangles)
 					mesh.triVerts.insert(mesh.triVerts.end(), { (unsigned) t.x, (unsigned) t.y, (unsigned) t.z});
-				//mesh.Merge();
-				
 				
 				m.push_back(manifold::Manifold(mesh));
 				if (verbose) std::cout << "heightmap" << std::endl;

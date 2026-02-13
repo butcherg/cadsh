@@ -274,8 +274,6 @@ void heightmap2mesh(std::string filename, Mesh &mesh)
 	hmp.loadHeightMap(filename);
 	HeightMap base = hmp;
 	
-	
-	
 	//build heightmap mesh:
 	hmp.buildVertices(mesh);
 	hmp.fourTriangulate(mesh);
