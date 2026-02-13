@@ -304,6 +304,35 @@ int main(int argc, char **argv)
 			else err("revolve: no parameters");
 		}
 		
+		else if (t[0] == "heightmap") {  //cmd --revolve:polyfilename,segments,degrees
+			if (t.size() >= 2) {
+				
+				/*
+				manifold::MeshGL mesh = heightmap2mesh(t[1]);
+				//ExportMesh3MF("test.3mf", mesh);
+				std::cout << "points: " << mesh.NumVert() << "(" << mesh.vertProperties.size() << ")  triangles: " << mesh.NumTri() << "(" << mesh.triVerts.size() << ")" << std::endl;
+				if( mesh.Merge()) std::cout << "heightmap: mesh fixed" << std::endl;
+				*/
+				
+				std::pair<std::vector<vec3f>, std::vector<vec3i>> msh = heightmap2Mesh(t[1], 1);
+				auto points = msh.first;
+				auto triangles = msh.second;
+			
+				//load texture mesh into a Manifold object:
+				manifold::MeshGL mesh;
+				for (auto p : points) 
+					mesh.vertProperties.insert(mesh.vertProperties.end(), {p.x, p.y, p.z});
+				for (auto t : triangles)
+					mesh.triVerts.insert(mesh.triVerts.end(), { (unsigned) t.x, (unsigned) t.y, (unsigned) t.z});
+				//mesh.Merge();
+				
+				
+				m.push_back(manifold::Manifold(mesh));
+				if (verbose) std::cout << "heightmap" << std::endl;
+			}
+			else err("heightmap: no parameters");
+		}
+		
 		
 		//cmd -operators (work on only last mesh):
 		
