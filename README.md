@@ -48,8 +48,10 @@ Commands:
    - cylinder:h,rl[,rh[,seg[,'ctr']]]
    - sphere:r[,seg]
    - tetrahedron
+   - isocahedron
    - extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]
    - revolve:polyfilename,segments,degrees
+   - heightmap:heightmapfilename
 - operators (work on only last mesh):
    - translate:x,y,z
    - rotate:x,y,z
