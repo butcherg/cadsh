@@ -7,7 +7,8 @@
 #include "manifold/manifold.h"
 #include "meshIO.h"
 #include "mathparser.h"
-#include "heightmap.h"
+//#include "heightmap.h"
+#include "manifold_tidbits.h"
 
 //use this to parse out command specs: grep "//cmd" ../src/cadsh.cpp | awk -F'//cmd' '{printf "cout << \"\t"$2 "\" << endl << endl;\n" }'
 
@@ -57,6 +58,7 @@ int toI(std::string s)
 	return (int) a;
 }
 
+/*
 unsigned addVertex(manifold::MeshGL &mesh, double x, double y, double z)
 {
 	unsigned idx = mesh.vertProperties.size();
@@ -70,7 +72,8 @@ unsigned addTriangle(manifold::MeshGL &mesh, unsigned a, unsigned b, unsigned c)
 	mesh.triVerts.insert(mesh.triVerts.end(), { a, b, c});
 	return idx/3;
 }
-
+*/
+/*
 manifold::MeshGL icosahedron()
 {
   manifold::MeshGL mesh;
@@ -120,6 +123,7 @@ manifold::MeshGL icosahedron()
 
   return mesh;
 }
+*/
 
 manifold::SimplePolygon loadpoly(std::string filename)
 {
@@ -137,6 +141,25 @@ manifold::SimplePolygon loadpoly(std::string filename)
 	}
 	else err("polygon file load unsuccessful");
 	return s;
+}
+
+std::vector<std::vector<float>> loadHeightMap(std::string filename)
+{
+	std::vector<std::vector<float>> hm;
+	std::ifstream inputFile(filename);
+	if (inputFile.is_open()) {
+		std::string line;
+		while (getline(inputFile, line)) {
+			if (line.size() == 0) continue;
+			std::vector<std::string> l = split(line, " ");
+			std::vector<float> lt;
+			for (auto n : l) 
+				lt.push_back(atof(n.c_str()));
+			hm.push_back(lt);
+		}
+		inputFile.close();
+	}
+	return hm;
 }
 
 
@@ -254,7 +277,7 @@ int main(int argc, char **argv)
 				}
 				
 				m.push_back(manifold::Manifold::Cube({x,y,z}, ctr));
-				if (verbose) std::cout << "cube: " << x << "," << y << "," << z << std::endl;
+				if (verbose) std::cout << "cube: " << x << "," << y << "," << z << " " << manifoldError(m[m.size()-1].Status())  << std::endl;
 			}
 			else err("cube: no parameters");
 		}
@@ -282,6 +305,7 @@ int main(int argc, char **argv)
 				}
 				m.push_back(manifold::Manifold::Cylinder(h, rl, rh, seg, ctr));
 				if (verbose) std::cout << "cylinder: " << h << "," << rl << "," << rh << std::endl;
+				if (verbose) std::cout << "cylinder: " << h << "," << rl << "," << rh << " " << manifoldError(m[m.size()-1].Status()) << std::endl;
 			}
 			else err("cylinder: no parameters");
 		}
@@ -299,7 +323,7 @@ int main(int argc, char **argv)
 					seg = toI(p[1]);
 				}
 				m.push_back(manifold::Manifold::Sphere(r, seg));
-				if (verbose) std::cout << "sphere: " << r << std::endl;
+				if (verbose) std::cout << "sphere: " << r << " " << manifoldError(m[m.size()-1].Status()) << std::endl;
 			}
 			else err("sphere: no parameters");
 		}
@@ -308,12 +332,12 @@ int main(int argc, char **argv)
 			manifold::MeshGL mesh = icosahedron();
 			//std::cout << "numPts: " << mesh.NumVert() << "  numTris: " << mesh.NumTri() << std::endl;
 			m.push_back(manifold::Manifold(mesh));
-			if (verbose) std::cout << "icosahedron" << std::endl;
+			if (verbose) std::cout << "icosahedron: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 		}
 		
 		else if (t[0] == "tetrahedron") {  //cmd --tetrahedron
 			m.push_back(manifold::Manifold::Tetrahedron());
-			if (verbose) std::cout << "tetrahedron" << std::endl;
+			if (verbose) std::cout << "tetrahedron: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 		}
 		
 		else if (t[0] == "extrude") {  //cmd --extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]
@@ -346,7 +370,7 @@ int main(int argc, char **argv)
 				}
 				
 				m.push_back(manifold::Manifold::Extrude(pg, h, d, t, s));
-				if (verbose) std::cout << "extrude" << std::endl;
+				if (verbose) std::cout << "extrude: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 			}
 			else err("extrude: no parameters");
 		}
@@ -370,30 +394,21 @@ int main(int argc, char **argv)
 				}
 				
 				m.push_back(manifold::Manifold::Revolve(pg, seg, d));
-				if (verbose) std::cout << "revolve" << std::endl;
+				if (verbose) std::cout << "revolve: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 			}
 			else err("revolve: no parameters");
 		}
 		
 		else if (t[0] == "heightmap") {  //cmd --revolve:polyfilename,segments,degrees
 			if (t.size() >= 2) {
-				
-				std::pair<std::vector<vec3f>, std::vector<vec3i>> msh = heightmap2Mesh(t[1], 1);
-				auto points = msh.first;
-				auto triangles = msh.second;
-
-				manifold::MeshGL mesh;
-				for (auto p : points) 
-					mesh.vertProperties.insert(mesh.vertProperties.end(), {p.x, p.y, p.z});
-				for (auto t : triangles)
-					mesh.triVerts.insert(mesh.triVerts.end(), { (unsigned) t.x, (unsigned) t.y, (unsigned) t.z});
-				
+				std::vector<std::vector<float>> hm = loadHeightMap(t[1]);
+				manifold::MeshGL mesh =  heightmap2mesh(hm);
 				m.push_back(manifold::Manifold(mesh));
-				if (verbose) std::cout << "heightmap" << std::endl;
+				if (verbose) std::cout << "heightmap: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 			}
 			else err("heightmap: no parameters");
 		}
-		
+
 		
 		//cmd -operators (work on only last mesh):
 		
