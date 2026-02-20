@@ -219,12 +219,14 @@ int main(int argc, char **argv)
 			if (t.size() >= 2) {
 				std::filesystem::path p = std::string(t[1]);
 				if (p.extension() == ".3mf") {
+					if (verbose) std::cout << "load:" << t[1] << std::endl;
 					std::vector<manifold::MeshGL> mm =  ImportMeshes3MF(t[1]);
 					for (auto msh : mm)
 						m.push_back(manifold::Manifold(msh));
-					if (verbose) std::cout << "load:" << t[1] << std::endl;
+					
 				}
 				else if (p.extension() == ".stl") {
+					if (verbose) std::cout << "load:" << t[1] << std::endl;
 					manifold::MeshGL msh = ImportMeshSTL(t[1]);
 					if (msh.Merge()) 
 						if (verbose) 
@@ -233,7 +235,7 @@ int main(int argc, char **argv)
 					if (mm.Status() != manifold::Manifold::Error::NoError)
 						err("load: STL too borked to make a Manifold");
 					m.push_back(mm);
-					if (verbose) std::cout << "load:" << t[1] << std::endl;
+					
 				}
 				else
 					std::cout << "invalid filename: " << t[1] << std::endl;
@@ -249,8 +251,9 @@ int main(int argc, char **argv)
 					for (auto mm : m) {
 						mshs.push_back(mm.GetMeshGL());
 					}
-					ExportMeshes3MF(t[1], mshs);
 					if (verbose) std::cout << "save:" << t[1] << std::endl;
+					ExportMeshes3MF(t[1], mshs);
+					
 				}
 				else
 					std::cout << "invalid filename: " << t[1] << std::endl;
@@ -277,7 +280,8 @@ int main(int argc, char **argv)
 				}
 				
 				m.push_back(manifold::Manifold::Cube({x,y,z}, ctr));
-				if (verbose) std::cout << "cube: " << x << "," << y << "," << z << " " << manifoldError(m[m.size()-1].Status())  << std::endl;
+				if (verbose) std::cout << "cube: " << x << "," << y << "," << z << " " << std::endl;
+				//if (verbose) std::cout << "cube: " << x << "," << y << "," << z << " " << manifoldError(m[m.size()-1].Status())  << std::endl;
 			}
 			else err("cube: no parameters");
 		}
@@ -305,7 +309,7 @@ int main(int argc, char **argv)
 				}
 				m.push_back(manifold::Manifold::Cylinder(h, rl, rh, seg, ctr));
 				if (verbose) std::cout << "cylinder: " << h << "," << rl << "," << rh << std::endl;
-				if (verbose) std::cout << "cylinder: " << h << "," << rl << "," << rh << " " << manifoldError(m[m.size()-1].Status()) << std::endl;
+				//if (verbose) std::cout << "cylinder: " << h << "," << rl << "," << rh << " " << manifoldError(m[m.size()-1].Status()) << std::endl;
 			}
 			else err("cylinder: no parameters");
 		}
@@ -322,22 +326,25 @@ int main(int argc, char **argv)
 				if (p.size() >= 2) {
 					seg = toI(p[1]);
 				}
-				m.push_back(manifold::Manifold::Sphere(r, seg));
 				if (verbose) std::cout << "sphere: " << r << " " << manifoldError(m[m.size()-1].Status()) << std::endl;
+				m.push_back(manifold::Manifold::Sphere(r, seg));
+				
 			}
 			else err("sphere: no parameters");
 		}
 		
 		else if (t[0] == "icosahedron") {  //cmd --tetrahedron
+			if (verbose) std::cout << "icosahedron: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 			manifold::MeshGL mesh = icosahedron();
 			//std::cout << "numPts: " << mesh.NumVert() << "  numTris: " << mesh.NumTri() << std::endl;
 			m.push_back(manifold::Manifold(mesh));
-			if (verbose) std::cout << "icosahedron: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
+			
 		}
 		
 		else if (t[0] == "tetrahedron") {  //cmd --tetrahedron
-			m.push_back(manifold::Manifold::Tetrahedron());
 			if (verbose) std::cout << "tetrahedron: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
+			m.push_back(manifold::Manifold::Tetrahedron());
+			
 		}
 		
 		else if (t[0] == "extrude") {  //cmd --extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]
@@ -368,9 +375,9 @@ int main(int argc, char **argv)
 					}
 					else err("extrude: malformed scale");
 				}
-				
-				m.push_back(manifold::Manifold::Extrude(pg, h, d, t, s));
 				if (verbose) std::cout << "extrude: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
+				m.push_back(manifold::Manifold::Extrude(pg, h, d, t, s));
+				
 			}
 			else err("extrude: no parameters");
 		}
@@ -392,19 +399,20 @@ int main(int argc, char **argv)
 				if (p.size() >= 3) {
 					d = toI(p[2]);
 				}
-				
-				m.push_back(manifold::Manifold::Revolve(pg, seg, d));
 				if (verbose) std::cout << "revolve: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
+				m.push_back(manifold::Manifold::Revolve(pg, seg, d));
+				
 			}
 			else err("revolve: no parameters");
 		}
 		
 		else if (t[0] == "heightmap") {  //cmd --revolve:polyfilename,segments,degrees
 			if (t.size() >= 2) {
+				if (verbose) std::cout << "heightmap: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 				std::vector<std::vector<float>> hm = loadHeightMap(t[1]);
 				manifold::MeshGL mesh =  heightmap2mesh(hm);
 				m.push_back(manifold::Manifold(mesh));
-				if (verbose) std::cout << "heightmap: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
+				
 			}
 			else err("heightmap: no parameters");
 		}
@@ -417,12 +425,13 @@ int main(int argc, char **argv)
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
 					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
+					if (verbose) std::cout << "translate: " << x << "," << y << "," << z << std::endl;
 					if (all)
 						for (auto &mm : m)
 							mm = mm.Translate({x,y,z}); 
 					else
 						m[m.size()-1] = m[m.size()-1].Translate({x,y,z}); 
-					if (verbose) std::cout << "translate: " << x << "," << y << "," << z << std::endl;
+					
 				}
 				else err("translate: invalid parameters");
 			}
@@ -433,12 +442,13 @@ int main(int argc, char **argv)
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
 					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
+					if (verbose) std::cout << "rotate: " << x << "," << y << "," << z << std::endl;
 					if (all)
 						for (auto &mm : m)
 							mm = mm.Rotate(x,y,z); 
 					else
 						m[m.size()-1] = m[m.size()-1].Rotate(x,y,z);
-					if (verbose) std::cout << "rotate: " << x << "," << y << "," << z << std::endl;
+					
 				}
 				else err("rotate: invalid parameters");
 			}
@@ -447,6 +457,7 @@ int main(int argc, char **argv)
 		else if (t[0] == "scale") { //cmd --scale:s|x,y,z
 			manifold::vec3 s;
 			if (t.size() >= 2) {
+				if (verbose) std::cout << "scale: " << s.x << "," << s.y << "," << s.z << std::endl;
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 1) {
 					s[0] = s[1] =s[2] = toD(t[1]);
@@ -466,16 +477,17 @@ int main(int argc, char **argv)
 			else
 				m[m.size()-1] = m[m.size()-1].Scale(s);
 			
-			if (verbose) std::cout << "scale: " << s.x << "," << s.y << "," << s.z << std::endl;
+			
 		}
 		
 		else if (t[0] == "simplify") { //cmd --simplify:s
 			if (t.size() == 2) {
 				double s = toD(t[1]);
+				if (verbose) std::cout << "simplify: " << s << "...";
 				int before = m[m.size()-1].NumTri();
 				m[m.size()-1] = m[m.size()-1].Simplify(s);
 				int after = m[m.size()-1].NumTri();
-				if (verbose) std::cout << "simplify: " << s << " (triangles: " << before << "/" << after << ")" << std::endl;
+				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
 			else err("simplify: no parameter");
 		}
@@ -483,31 +495,41 @@ int main(int argc, char **argv)
 		else if (t[0] == "refine") { //cmd --refine:n
 			if (t.size() == 2) {
 				int n = toI(t[1]);
+				if (verbose) std::cout << "refine: " << n << "...";
+				int before = m[m.size()-1].NumTri();
 				m[m.size()-1] = m[m.size()-1].Refine(n);
-				if (verbose) std::cout << "refine: " << n << std::endl;
+				int after = m[m.size()-1].NumTri();
+				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
 			else err("refine: no parameter");
 		}
 		
 		else if (t[0] == "refinetolength") { //cmd --refinetolength:l
 			if (t.size() == 2) {
+				int before = m[m.size()-1].NumTri();
 				double l = toD(t[1]);
+				if (verbose) std::cout << "refinetolength: " << l << "...";
 				m[m.size()-1] = m[m.size()-1].RefineToLength(l);
-				if (verbose) std::cout << "refinetolength: " << l << std::endl;
+				int after = m[m.size()-1].NumTri();
+				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
 			else err("refinetolength: no parameter");
 		}
 		
 		else if (t[0] == "refinetotolerance") { //cmd --refinetotolerance:t
 			if (t.size() == 2) {
+				int before = m[m.size()-1].NumTri();
 				double tl = toD(t[1]);
+				if (verbose) std::cout << "refinetotolerance: " << tl << "...";
 				m[m.size()-1] = m[m.size()-1].RefineToTolerance(tl);
-				if (verbose) std::cout << "refinetotolerance: " << tl << std::endl;
+				int after = m[m.size()-1].NumTri();
+				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
 			else err("refinetotolerance: no parameter");
 		}
 		
 		else if (t[0] == "smoothout") { //cmd --smoothout:[msa[,ms]]
+			
 			double msa=60.0;
 			double ms=0;
 			if (t.size() == 2) {
@@ -520,18 +542,22 @@ int main(int argc, char **argv)
 					ms = toD(p[1]);
 				}
 			}
+			if (verbose) std::cout << "smoothout: " << msa << "," << ms << "...";
+			int before = m[m.size()-1].NumTri();
 			m[m.size()-1] = m[m.size()-1].SmoothOut(msa, ms);
-			if (verbose) std::cout << "smoothout: " << msa << "," << ms << std::endl;
+			int after = m[m.size()-1].NumTri();
+			if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 		}
 		
 		
 		//cmd -aggregators:
 		
 		else if (t[0] == "union") { //cmd --union
+			if (verbose) std::cout << "union" << std::endl;
 			manifold::Manifold u = manifold::Manifold::BatchBoolean(m, manifold::OpType::Add);
 			m.clear();
 			m.push_back(u);
-			if (verbose) std::cout << "union" << std::endl;
+			
 		}
 		
 		else if (t[0] == "subtract") { //cmd --subtract
@@ -554,6 +580,7 @@ int main(int argc, char **argv)
 			m.push_back(u);
 			if (verbose) std::cout << "hull" << std::endl;
 		}
+		else err("Unrecognized command: "+t[0]);
 	}
 	
 	exit(EXIT_SUCCESS);
