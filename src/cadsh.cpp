@@ -275,6 +275,19 @@ int main(int argc, char **argv)
 					<< std::endl;
 		}
 		
+		else if (t[0] == "calculatenormals") {
+			
+			if (all) {
+				if (verbose) std::cout << "calculatenormals, " << m.size() << " meshes" << std::endl;
+				for (auto &mm : m)
+					mm = mm.CalculateNormals(0); 
+			}
+			else {
+				m[m.size()-1] = m[m.size()-1].CalculateNormals(0);
+				if (verbose) std::cout << "calculatenormals, last mesh" << std::endl;
+			}
+		}
+		
 		
 		//cmd -primitives:
 		
@@ -430,7 +443,7 @@ int main(int argc, char **argv)
 			}
 			else err("heightmap: no parameters");
 		}
-
+		
 		
 		//cmd -operators (work on only last mesh):
 		
@@ -561,6 +574,19 @@ int main(int argc, char **argv)
 			m[m.size()-1] = m[m.size()-1].SmoothOut(msa, ms);
 			int after = m[m.size()-1].NumTri();
 			if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+		}
+		
+		else if (t[0] == "smootbynormals") { //cmd --smootbynormals
+			
+			double msa=60.0;
+			double ms=0;
+			if (t.size() == 2) {
+				if (verbose) std::cout << "smootbynormals... " ;
+				int before = m[m.size()-1].NumTri();
+				m[m.size()-1] = m[m.size()-1].SmoothByNormals(0);
+				int after = m[m.size()-1].NumTri();
+				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+			}
 		}
 		
 		
