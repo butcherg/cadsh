@@ -580,7 +580,7 @@ int main(int argc, char **argv)
 			
 			double msa=60.0;
 			double ms=0;
-			if (t.size() == 2) {
+			if (t.size() >= 1) {
 				if (verbose) std::cout << "smoothbynormals... " ;
 				int before = m[m.size()-1].NumTri();
 				m[m.size()-1] = m[m.size()-1].SmoothByNormals(0);
