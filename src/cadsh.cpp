@@ -576,12 +576,12 @@ int main(int argc, char **argv)
 			if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 		}
 		
-		else if (t[0] == "smootbynormals") { //cmd --smootbynormals
+		else if (t[0] == "smoothbynormals") { //cmd --smoothbynormals
 			
 			double msa=60.0;
 			double ms=0;
 			if (t.size() == 2) {
-				if (verbose) std::cout << "smootbynormals... " ;
+				if (verbose) std::cout << "smoothbynormals... " ;
 				int before = m[m.size()-1].NumTri();
 				m[m.size()-1] = m[m.size()-1].SmoothByNormals(0);
 				int after = m[m.size()-1].NumTri();
