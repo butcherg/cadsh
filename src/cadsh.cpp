@@ -261,6 +261,20 @@ int main(int argc, char **argv)
 			else err("save: no parameters");
 		}
 		
+		else if (t[0] == "info") {
+			for (unsigned i=0; i<m.size(); i++)
+				std::cout << i << ":" 
+					<< " NumVert:" << m[i].NumVert() 
+					<< " NumEdge:" << m[i].NumEdge()
+					<< " NumTri:" << m[i].NumTri()
+					<< " NumProp:" << m[i].NumProp()
+					<< " NumPropVert:" << m[i].NumPropVert()
+					<< " Genus:" << m[i].Genus()
+					<< " Tolerance:" << m[i].GetTolerance()
+					<< " Status:" << manifoldError(m[i].Status()) 
+					<< std::endl;
+		}
+		
 		
 		//cmd -primitives:
 		
