@@ -219,14 +219,12 @@ int main(int argc, char **argv)
 			if (t.size() >= 2) {
 				std::filesystem::path p = std::string(t[1]);
 				if (p.extension() == ".3mf") {
-					if (verbose) std::cout << "load:" << t[1] << std::endl;
 					std::vector<manifold::MeshGL> mm =  ImportMeshes3MF(t[1]);
 					for (auto msh : mm)
 						m.push_back(manifold::Manifold(msh));
-					
+					if (verbose) std::cout << "load:" << t[1] << ", " << m.size() << " meshes" << std::endl;
 				}
 				else if (p.extension() == ".stl") {
-					if (verbose) std::cout << "load:" << t[1] << std::endl;
 					manifold::MeshGL msh = ImportMeshSTL(t[1]);
 					if (msh.Merge()) 
 						if (verbose) 
@@ -235,7 +233,7 @@ int main(int argc, char **argv)
 					if (mm.Status() != manifold::Manifold::Error::NoError)
 						err("load: STL too borked to make a Manifold");
 					m.push_back(mm);
-					
+					if (verbose) std::cout << "load:" << t[1] << ", " << m.size() << " meshes" << std::endl;
 				}
 				else
 					std::cout << "invalid filename: " << t[1] << std::endl;
@@ -283,8 +281,8 @@ int main(int argc, char **argv)
 					mm = mm.CalculateNormals(0); 
 			}
 			else {
-				m[m.size()-1] = m[m.size()-1].CalculateNormals(0);
 				if (verbose) std::cout << "calculatenormals, last mesh" << std::endl;
+				m[m.size()-1] = m[m.size()-1].CalculateNormals(0);
 			}
 		}
 		
