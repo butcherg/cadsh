@@ -5,7 +5,8 @@
 #include <filesystem>
 
 #include "manifold/manifold.h"
-#include "meshIO.h"
+//#include "meshIO.h"
+#include "manifoldIO.h"
 #include "mathparser.h"
 //#include "heightmap.h"
 #include "manifold_tidbits.h"
@@ -153,9 +154,11 @@ int main(int argc, char **argv)
 			if (t.size() >= 2) {
 				std::filesystem::path p = std::string(t[1]);
 				if (p.extension() == ".3mf") {
-					std::vector<manifold::MeshGL> mm =  ImportMeshes3MF(t[1]);
+					//std::vector<manifold::MeshGL> mm =  ImportMeshes3MF(t[1]);
+					std::vector<manifold::Manifold> mm = ImportMeshes3MF(t[1]);
 					for (auto msh : mm)
-						m.push_back(manifold::Manifold(msh));
+						//m.push_back(manifold::Manifold(msh));
+						m.push_back(msh);
 					if (verbose) std::cout << "load:" << t[1] << ", " << m.size() << " meshes" << std::endl;
 				}
 				else if (p.extension() == ".stl") {
@@ -179,12 +182,13 @@ int main(int argc, char **argv)
 			if (t.size() >= 2) {
 				std::filesystem::path p = std::string(t[1]);
 				if (p.extension() == ".3mf") {
-					std::vector<manifold::MeshGL> mshs;
-					for (auto mm : m) {
-						mshs.push_back(mm.GetMeshGL());
-					}
+					//std::vector<manifold::MeshGL> mshs;
+					//for (auto mm : m) {
+					//	mshs.push_back(mm.GetMeshGL());
+					//}
 					if (verbose) std::cout << "save:" << t[1] << std::endl;
-					ExportMeshes3MF(t[1], mshs);
+					//ExportMeshes3MF(t[1], mshs);
+					ExportMeshes3MF(t[1], m);
 					
 				}
 				else
