@@ -388,12 +388,15 @@ int main(int argc, char **argv)
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
 					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
-					if (verbose) std::cout << "translate: " << x << "," << y << "," << z << std::endl;
-					if (all)
+					if (all) {
+						if (verbose) std::cout << "translate(all): " << x << "," << y << "," << z << std::endl;
 						for (auto &mm : m)
 							mm = mm.Translate({x,y,z}); 
-					else
+					}
+					else {
+						if (verbose) std::cout << "translate(last): " << x << "," << y << "," << z << std::endl;
 						m[m.size()-1] = m[m.size()-1].Translate({x,y,z}); 
+					}
 					
 				}
 				else err("translate: invalid parameters");
@@ -405,13 +408,15 @@ int main(int argc, char **argv)
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 3) {
 					double x =toD(p[0]); double y = toD(p[1]); double z = toD(p[2]);
-					if (verbose) std::cout << "rotate: " << x << "," << y << "," << z << std::endl;
-					if (all)
+					if (all) {
+						if (verbose) std::cout << "rotate(all): " << x << "," << y << "," << z << std::endl;
 						for (auto &mm : m)
 							mm = mm.Rotate(x,y,z); 
-					else
+					}
+					else {
+						if (verbose) std::cout << "rotate(last): " << x << "," << y << "," << z << std::endl;
 						m[m.size()-1] = m[m.size()-1].Rotate(x,y,z);
-					
+					}
 				}
 				else err("rotate: invalid parameters");
 			}
@@ -420,7 +425,7 @@ int main(int argc, char **argv)
 		else if (t[0] == "scale") { //cmd --scale:s|x,y,z
 			manifold::vec3 s;
 			if (t.size() >= 2) {
-				if (verbose) std::cout << "scale: " << s.x << "," << s.y << "," << s.z << std::endl;
+				
 				std::vector<std::string> p = split(t[1], ",");
 				if (p.size() == 1) {
 					s[0] = s[1] =s[2] = toD(t[1]);
@@ -434,11 +439,15 @@ int main(int argc, char **argv)
 			}
 			else err("scale: no parameters");
 			
-			if (all)
+			if (all) {
+				if (verbose) std::cout << "scale (all): " << s.x << "," << s.y << "," << s.z << std::endl;
 				for (auto &mm : m)
 					mm = mm.Scale(s); 
-			else
+			}
+			else {
+				if (verbose) std::cout << "scale (last): " << s.x << "," << s.y << "," << s.z << std::endl;
 				m[m.size()-1] = m[m.size()-1].Scale(s);
+			}
 			
 			
 		}
@@ -446,11 +455,22 @@ int main(int argc, char **argv)
 		else if (t[0] == "simplify") { //cmd --simplify:s
 			if (t.size() == 2) {
 				double s = toD(t[1]);
-				if (verbose) std::cout << "simplify: " << s << "...";
-				int before = m[m.size()-1].NumTri();
-				m[m.size()-1] = m[m.size()-1].Simplify(s);
-				int after = m[m.size()-1].NumTri();
-				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+				if (all) {
+					if (verbose) std::cout << "simplify(all): " << s << "..." << std::endl;
+					for (auto &mm : m) {
+						int before = mm.NumTri();
+						mm = mm.Simplify(s);
+						int after = mm.NumTri();
+						if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+					}
+				}
+				else {
+					if (verbose) std::cout << "simplify(last): " << s << "...";
+					int before = m[m.size()-1].NumTri();
+					m[m.size()-1] = m[m.size()-1].Simplify(s);
+					int after = m[m.size()-1].NumTri();
+					if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+				}
 			}
 			else err("simplify: no parameter");
 		}
@@ -458,35 +478,68 @@ int main(int argc, char **argv)
 		else if (t[0] == "refine") { //cmd --refine:n
 			if (t.size() == 2) {
 				int n = toI(t[1]);
-				if (verbose) std::cout << "refine: " << n << "...";
-				int before = m[m.size()-1].NumTri();
-				m[m.size()-1] = m[m.size()-1].Refine(n);
-				int after = m[m.size()-1].NumTri();
-				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+				if (all) {
+					if (verbose) std::cout << "refine(all): " << n << "..." << std::endl;
+					for (auto &mm : m) {
+						int before = mm.NumTri();
+						mm = mm.Refine(n);
+						int after = mm.NumTri();
+						if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+					}
+				}
+				else {
+					if (verbose) std::cout << "refine(last): " << n << "...";
+					int before = m[m.size()-1].NumTri();
+					m[m.size()-1] = m[m.size()-1].Refine(n);
+					int after = m[m.size()-1].NumTri();
+					if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+				}
 			}
 			else err("refine: no parameter");
 		}
 		
 		else if (t[0] == "refinetolength") { //cmd --refinetolength:l
 			if (t.size() == 2) {
-				int before = m[m.size()-1].NumTri();
 				double l = toD(t[1]);
-				if (verbose) std::cout << "refinetolength: " << l << "...";
-				m[m.size()-1] = m[m.size()-1].RefineToLength(l);
-				int after = m[m.size()-1].NumTri();
-				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+				if (all) {
+					if (verbose) std::cout << "refinetolength(all): " << l << "..." << std::endl;
+					for (auto &mm : m) {
+						int before = mm.NumTri();
+						mm = mm.RefineToLength(l);
+						int after = mm.NumTri();
+						if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+					}
+				}
+				else {
+					if (verbose) std::cout << "refinetolength(last): " << l << "...";
+					int before = m[m.size()-1].NumTri();
+					m[m.size()-1] = m[m.size()-1].RefineToLength(l);
+					int after = m[m.size()-1].NumTri();
+					if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+				}
 			}
 			else err("refinetolength: no parameter");
 		}
 		
 		else if (t[0] == "refinetotolerance") { //cmd --refinetotolerance:t
 			if (t.size() == 2) {
-				int before = m[m.size()-1].NumTri();
 				double tl = toD(t[1]);
-				if (verbose) std::cout << "refinetotolerance: " << tl << "...";
-				m[m.size()-1] = m[m.size()-1].RefineToTolerance(tl);
-				int after = m[m.size()-1].NumTri();
-				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+				if (all) {
+					if (verbose) std::cout << "refinetotolerance(all): " << tl << "..." << std::endl;
+					for (auto &mm : m) {
+						int before = mm.NumTri();
+						mm = mm.RefineToTolerance(tl);
+						int after = mm.NumTri();
+						if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+					}
+				}
+				else {
+					if (verbose) std::cout << "refinetotolerance(last): " << tl << "...";
+					int before = m[m.size()-1].NumTri();
+					m[m.size()-1] = m[m.size()-1].RefineToTolerance(tl);
+					int after = m[m.size()-1].NumTri();
+					if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+				}
 			}
 			else err("refinetotolerance: no parameter");
 		}
@@ -505,11 +558,22 @@ int main(int argc, char **argv)
 					ms = toD(p[1]);
 				}
 			}
-			if (verbose) std::cout << "smoothout: " << msa << "," << ms << "...";
-			int before = m[m.size()-1].NumTri();
-			m[m.size()-1] = m[m.size()-1].SmoothOut(msa, ms);
-			int after = m[m.size()-1].NumTri();
-			if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+			if (all) {
+				if (verbose) std::cout << "smoothout(all): " << msa << "," << ms << "..." << std::endl;
+				for (auto &mm : m) {
+					int before = mm.NumTri();
+					mm = mm.SmoothOut(msa, ms);
+					int after = mm.NumTri();
+					if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+				}
+			}
+			else {
+				if (verbose) std::cout << "smoothout(last): " << msa << "," << ms << "...";
+				int before = m[m.size()-1].NumTri();
+				m[m.size()-1] = m[m.size()-1].SmoothOut(msa, ms);
+				int after = m[m.size()-1].NumTri();
+				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
+			}
 		}
 		
 		else if (t[0] == "smoothbynormals") { //cmd --smoothbynormals
