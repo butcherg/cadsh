@@ -367,7 +367,7 @@ void executeParameter(std::string parameter)
 		else err("revolve: no parameters");
 	}
 		
-	else if (t[0] == "heightmap") {  //cmd --revolve:polyfilename,segments,degrees
+	else if (t[0] == "heightmap") {  //cmd --heightmap:heightmapfile
 		if (t.size() >= 2) {
 			if (verbose) std::cout << "heightmap: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 			std::vector<std::vector<float>> hm = loadHeightMap(t[1]);
