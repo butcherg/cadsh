@@ -1,8 +1,11 @@
 # cadsh: Command Line CAD
 
-Presents the Manifold library in a command line program.  The interface is all command line parameters, acted-on sequentially on a mesh list. 3MF files can be loaded and saved at any point in the parameter sequence, and most of the Manifold primitives can be created.  Operators work on the last mesh in the list, and aggregators work in Manifold-fashion on the list.
+Presents the Manifold library in a command line program.  The interface is all commands, each act sequentially on a mesh list. 3MF files can be loaded and saved at any point in the parameter sequence, and most of the Manifold primitives can be created.  Operators work on the last mesh in the list, and aggregators work in Manifold-fashion on the list.
 
-The Manifold library and its documentation can be found here: https://github.com/elalish/manifold
+cadsh can be executed in one of three modes:
+1. command-line: The CAD commands are specified on the command line, separated by spaces.
+2. shell: If cadsh is run without any command-line parameters, a shell prompt, ">" is presented, and commands can be entered one-by-one
+3. script: If cadsh is run with one command line parameters, an that paramter specifies an existing file, the file is open and run as a script, with each cadsh command on a separate line.  Comments can be interspersed prepended with a '#' character
 
 The following would load a 3MF file into the mesh list, simplify the last mesh, and save the mesh list:
 
@@ -37,31 +40,38 @@ extrude and revolve use polygon files defined as text files, one comma-separated
 
 In the following command descriptions, [] are used to segregate optional parameters.  Refer to the manifold documentation for parameter semantics.
 
-cadsh starts with an empty mesh list; load/save and primitive commands add meshes to the list.  Transforms work only on the last mesh in the list.  Aggregators work with the entire mesh list in the same semantics as the corresponding Manifold BatchBoolean/Hull methods
+cadsh starts with an empty mesh list; load/save and primitive commands add meshes to the list.  Transforms work only on the last mesh in the list, or on all meshes. Default is last-mesh, this can be changed with the transform command.  Aggregators work with the entire mesh list in the same semantics as the corresponding Manifold BatchBoolean/Hull methods
 
 Commands:
-- input/output:
+ - input/output:
    - load:filename
    - save:filename
-- primitives:
+ - primitives:
    - cube:x,y,z[,'ctr']
    - cylinder:h,rl[,rh[,seg[,'ctr']]]
    - sphere:r[,seg]
    - tetrahedron
-   - isocahedron
    - extrude:polyfilename,height[,div[,twistdeg[,scaletop]]]
    - revolve:polyfilename,segments,degrees
-   - heightmap:heightmapfilename
-- operators (work on only last mesh):
+   - icosahedron
+   - heightmap:heightmapfile
+ -operators:
    - translate:x,y,z
    - rotate:x,y,z
    - scale:s|x,y,z
    - simplify:s
-- aggregators:
+ - aggregators:
    - union
    - subtract
    - intersect
    - hull
+ - helpers:
+   - help
+   - status
+   - verbose
+   - transform:all|last
+
+cadsh commands are based on the capabilities of the Manifold library; its documentation can be found here: https://github.com/elalish/manifold.  The icosahedron and heighmap commands are unique to cadsh; heightmap files follow the format convention for text heighmaps ingested by OpenSCAD
 
 ## Building
 
@@ -84,12 +94,12 @@ make
 
 ## Acknowledgements
 
+- Manifold:  Copyright 2021 The Manifold Authors, Primary Author: Emmett Lalish. Apache 2.0 License
 - miniz: Public Domain
 - rapidxml: Copyright (c) 2006, 2007 Marcin Kalicinsk, MIT License
 
 ## To-Do
 
 1. Add other Manifold primitives: Minkowski
-2. Add other Manifold operations: Refine, Smooth
-3. Structure a mechanism to allow operators to be applied to other than just the last mesh
+
 
