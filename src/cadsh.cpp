@@ -102,7 +102,7 @@ std::vector<std::vector<float>> loadHeightMap(std::string filename)
 }
 
 
-void executeParameter(std::string parameter) 
+std::string executeParameter(std::string parameter) 
 {
 	std::vector<std::string> t = split(parameter, ":");
 	
@@ -133,19 +133,21 @@ void executeParameter(std::string parameter)
 		std::cout << "   --status" << std::endl;
 		std::cout << "   --verbose" << std::endl;
 		std::cout << "   --transform:all|last" << std::endl;
-
-		exit(EXIT_SUCCESS);
 	 }
 
 	//settings
 		
 	else if (t[0] == "verbose") verbose=true;
 		
-	else if (t[0] == "transform")
-		if (t[1] == "all")
-			all=true;
-		else
-			all=false;
+	else if (t[0] == "transform") {
+		if (t.size() >= 2) {
+			if (t[1] == "all")
+				all=true;
+			else
+				all=false;
+		}
+		else return "transform: no parameter";
+	}
 		
 	//cmd -input/output:
 		
@@ -168,14 +170,14 @@ void executeParameter(std::string parameter)
 						std::cout << "load: STL file fixed" << std::endl;
 				manifold::Manifold mm(msh);
 				if (mm.Status() != manifold::Manifold::Error::NoError)
-					err("load: STL too borked to make a Manifold");
+					return "load: STL too borked to make a Manifold";
 				m.push_back(mm);
 				if (verbose) std::cout << "load:" << t[1] << ", " << m.size() << " meshes" << std::endl;
 			}
 			else
 				std::cout << "invalid filename: " << t[1] << std::endl;
 		}
-		else err("load: no parameters");
+		else return "load: no parameters";
 	}
 		
 	else if (t[0] == "save") {  //cmd --save:filename
@@ -189,7 +191,7 @@ void executeParameter(std::string parameter)
 			else
 				std::cout << "invalid filename: " << t[1] << std::endl;
 		}
-		else err("save: no parameters");
+		else return "save: no parameters";
 	}
 	
 	else if (t[0] == "status") {
@@ -237,7 +239,7 @@ void executeParameter(std::string parameter)
 			if (p.size() >= 3) {
 				x =toD(p[0]); y = toD(p[1]); z = toD(p[2]);
 			}
-			else err("cube: insufficient parameters");
+			else return "cube: insufficient parameters";
 			if (p.size() >=4) {
 				if (p[3] == "ctr")
 					ctr = true;
@@ -247,7 +249,7 @@ void executeParameter(std::string parameter)
 			if (verbose) std::cout << "cube: " << x << "," << y << "," << z << " " << std::endl;
 			//if (verbose) std::cout << "cube: " << x << "," << y << "," << z << " " << manifoldError(m[m.size()-1].Status())  << td::endl;
 		}
-		else err("cube: no parameters");
+		else return "cube: no parameters";
 	}
 		
 	else if (t[0] == "cylinder") {  //cmd --cylinder:h,rl[,rh[,seg[,'ctr']]]
@@ -260,7 +262,7 @@ void executeParameter(std::string parameter)
 			if (p.size() >= 2) {
 				h = toD(p[0]); rl = toD(p[1]);
 			}
-			else err("cylinder: need at least h and rl");
+			else return "cylinder: need at least h and rl";
 			if (p.size() >= 3) {
 				rh = toD(p[2]);
 			}
@@ -275,7 +277,7 @@ void executeParameter(std::string parameter)
 			if (verbose) std::cout << "cylinder: " << h << "," << rl << "," << rh << std::endl;
 			//if (verbose) std::cout << "cylinder: " << h << "," << rl << "," << rh << " " << manifoldError(m[m.size()-1].Status()) << std::endl;
 		}
-		else err("cylinder: no parameters");
+		else return "cylinder: no parameters";
 	}
 		
 	else if (t[0] == "sphere") {  //cmd --sphere:r[,seg]
@@ -286,14 +288,14 @@ void executeParameter(std::string parameter)
 			if (p.size() >= 1) {
 				r = toD(p[0]);
 			}
-			else err("sphere: needs at least r");
+			else return "sphere: needs at least r";
 			if (p.size() >= 2) {
 				seg = toI(p[1]);
 			}
 			m.push_back(manifold::Manifold::Sphere(r, seg));
 			if (verbose) std::cout << "sphere: " << r << " " << manifoldError(m[m.size()-1].Status()) << std::endl;
 		}
-		else err("sphere: no parameters");
+		else return "sphere: no parameters";
 	}
 
 	else if (t[0] == "icosahedron") {  //cmd --tetrahedron
@@ -321,7 +323,7 @@ void executeParameter(std::string parameter)
 				pg.push_back(loadpoly(p[0]));
 				h = toD(p[1]);
 			}
-			else err("extrude: needs at least polygon and h");
+			else return "extrude: needs at least polygon and h";
 			if (p.size() >= 3) {
 				d = toI(p[2]);
 			}
@@ -334,13 +336,13 @@ void executeParameter(std::string parameter)
 					s[0] = toD(ss[0]);
 					s[0] = toD(ss[1]);
 				}
-				else err("extrude: malformed scale");
+				else return "extrude: malformed scale";
 			}
 			if (verbose) std::cout << "extrude: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 			m.push_back(manifold::Manifold::Extrude(pg, h, d, t, s));
 				
 		}
-		else err("extrude: no parameters");
+		else return "extrude: no parameters";
 	}
 		
 	else if (t[0] == "revolve") {  //cmd --revolve:polyfilename,segments,degrees
@@ -353,7 +355,7 @@ void executeParameter(std::string parameter)
 			if (p.size() >= 1) {
 				pg.push_back(loadpoly(p[0]));
 			}
-			else err("revolve: needs at least polygon");
+			else return "revolve: needs at least polygon";
 			if (p.size() >= 2) {
 				seg = toI(p[1]);
 			}
@@ -364,7 +366,7 @@ void executeParameter(std::string parameter)
 			m.push_back(manifold::Manifold::Revolve(pg, seg, d));
 				
 		}
-		else err("revolve: no parameters");
+		else return "revolve: no parameters";
 	}
 		
 	else if (t[0] == "heightmap") {  //cmd --heightmap:heightmapfile
@@ -374,7 +376,7 @@ void executeParameter(std::string parameter)
 			manifold::MeshGL mesh =  heightmap2mesh(hm);
 			m.push_back(manifold::Manifold(mesh));			
 		}
-		else err("heightmap: no parameters");
+		else return "heightmap: no parameters";
 	}
 		
 		
@@ -396,7 +398,7 @@ void executeParameter(std::string parameter)
 				}
 				
 			}
-			else err("translate: invalid parameters");
+			else return "translate: invalid parameters";
 		}
 	}
 		
@@ -415,7 +417,7 @@ void executeParameter(std::string parameter)
 					m[m.size()-1] = m[m.size()-1].Rotate(x,y,z);
 				}
 			}
-			else err("rotate: invalid parameters");
+			else return "rotate: invalid parameters";
 		}
 	}
 		
@@ -431,10 +433,10 @@ void executeParameter(std::string parameter)
 				s.x =toD(p[0]); s.y = toD(p[1]); s.z = toD(p[2]);
 			}
 			else {
-				err("scale: malformed parameters");
+				return "scale: malformed parameters";
 			}
 		}
-		else err("scale: no parameters");
+		else return "scale: no parameters";
 			
 		if (all) {
 			if (verbose) std::cout << "scale (all): " << s.x << "," << s.y << "," << s.z << std::endl;
@@ -468,7 +470,7 @@ void executeParameter(std::string parameter)
 				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
 		}
-		else err("simplify: no parameter");
+		else return "simplify: no parameter";
 	}
 		
 	else if (t[0] == "refine") { //cmd --refine:n
@@ -491,7 +493,7 @@ void executeParameter(std::string parameter)
 				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
 		}
-		else err("refine: no parameter");
+		else return "refine: no parameter";
 	}
 		
 	else if (t[0] == "refinetolength") { //cmd --refinetolength:l
@@ -514,7 +516,7 @@ void executeParameter(std::string parameter)
 				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
 		}
-		else err("refinetolength: no parameter");
+		else return "refinetolength: no parameter";
 	}
 		
 	else if (t[0] == "refinetotolerance") { //cmd --refinetotolerance:t
@@ -537,7 +539,7 @@ void executeParameter(std::string parameter)
 				if (verbose) std::cout << " (triangles: " << before << "/" << after << ")" << std::endl;
 			}
 		}
-		else err("refinetotolerance: no parameter");
+		else return "refinetotolerance: no parameter";
 	}
 		
 	else if (t[0] == "smoothout") { //cmd --smoothout:[msa[,ms]]		
@@ -613,7 +615,9 @@ void executeParameter(std::string parameter)
 		m.push_back(u);
 		if (verbose) std::cout << "hull" << std::endl;
 	}
-	else err("Unrecognized command: "+t[0]);
+	else return "Unrecognized command: "+t[0];
+	
+	return "";
 }
 
 
@@ -626,7 +630,8 @@ int main(int argc, char **argv)
 		while (1) {
 			std::cout << "> ";
 			std::getline(std::cin, param);
-			executeParameter(param);
+			std::string result = executeParameter(param);
+			if (result.size() > 0) std::cout << executeParameter(param) << std::endl;
 		}
 	}
 	
@@ -638,8 +643,10 @@ int main(int argc, char **argv)
 		if (!file.is_open()) err("File open failed: " + fname);
 		while (std::getline(file, param)) {
 			std::vector<std::string> l = split(param, "#");  //parse out comments
-			if (l.size() >= 1 && l[0].size() > 0)
-				executeParameter(l[0]);
+			if (l.size() >= 1 && l[0].size() > 0) {
+				std::string result = executeParameter(l[0]);
+				if (result.size() > 0) err(result);
+			}
 		}
 		file.close();
 	}
@@ -648,7 +655,8 @@ int main(int argc, char **argv)
 		std::cout << "command-line mode..." << std::endl;
 		for(int i=1; i<argc; i++) {
 			std::string param = std::string(argv[i]);
-			executeParameter(param);
+			std::string result = executeParameter(param);
+			if (result.size() > 0) err(result);
 		}
 	}
 	
