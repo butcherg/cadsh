@@ -230,9 +230,11 @@ std::vector<manifold::Manifold> ImportMeshes3MF(const std::string& filename)
 	return meshes;
 }
 
-bool ExportMesh3MF(const std::string& filename, const manifold::Manifold& m)
+
+
+bool ExportMeshGL3MF(const std::string& filename, const manifold::MeshGL &mesh)
 {
-	manifold::MeshGL mesh = m.GetMeshGL();
+	//manifold::MeshGL mesh = m.GetMeshGL();
 	
 	std::string comment = "";
 	std::string unit = "millimeter";
@@ -301,6 +303,12 @@ bool ExportMesh3MF(const std::string& filename, const manifold::Manifold& m)
 	
 	return true;
 	
+}
+
+bool ExportMesh3MF(const std::string& filename, const manifold::Manifold& m)
+{
+	manifold::MeshGL mesh = m.GetMeshGL();
+	return ExportMeshGL3MF(filename, mesh);
 }
 				
 bool ExportMeshes3MF(const std::string& filename, const std::vector<manifold::Manifold> ms)

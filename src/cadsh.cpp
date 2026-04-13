@@ -97,7 +97,7 @@ std::vector<std::vector<float>> loadHeightMap(std::string filename)
 			hm.push_back(lt);
 		}
 		inputFile.close();
-	}
+	} else err("loadHeightMap: file open failed");
 	return hm;
 }
 
@@ -150,6 +150,17 @@ std::string executeParameter(std::string parameter)
 	}
 		
 	//cmd -input/output:
+	
+	else if (t[0] == "clear") { 
+		int msize = m.size();
+		if (verbose) {
+			if (msize == 1)
+				std::cout << "clear:" << m.size() << " mesh" << std::endl;
+			else
+				std::cout << "clear:" << m.size() << " meshes" << std::endl;
+		}
+		m.clear();
+	}
 		
 	else if (t[0] == "load") {  //cmd --load:filename
 		if (t.size() >= 2) {
@@ -300,9 +311,9 @@ std::string executeParameter(std::string parameter)
 
 	else if (t[0] == "icosahedron") {  //cmd --tetrahedron
 		manifold::MeshGL mesh = icosahedron();
-		if (verbose) std::cout << "icosahedron: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 		//std::cout << "numPts: " << mesh.NumVert() << "  numTris: " << mesh.NumTri() << std::endl;
 		m.push_back(manifold::Manifold(mesh));
+		if (verbose) std::cout << "icosahedron: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 	}
 		
 	else if (t[0] == "tetrahedron") {  //cmd --tetrahedron
@@ -338,8 +349,9 @@ std::string executeParameter(std::string parameter)
 				}
 				else return "extrude: malformed scale";
 			}
-			if (verbose) std::cout << "extrude: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
+			
 			m.push_back(manifold::Manifold::Extrude(pg, h, d, t, s));
+			if (verbose) std::cout << "extrude: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 				
 		}
 		else return "extrude: no parameters";
@@ -362,19 +374,40 @@ std::string executeParameter(std::string parameter)
 			if (p.size() >= 3) {
 				d = toI(p[2]);
 			}
-			if (verbose) std::cout << "revolve: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
+			
 			m.push_back(manifold::Manifold::Revolve(pg, seg, d));
+			if (verbose) std::cout << "revolve: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
 				
 		}
 		else return "revolve: no parameters";
 	}
 		
-	else if (t[0] == "heightmap") {  //cmd --heightmap:heightmapfile
+	else if (t[0] == "heightmap") {  //cmd --heightmap:heightmapfile[height[contour]]
 		if (t.size() >= 2) {
+			std::vector<std::string> p = split(t[1], ",");
+			std::string filename;
+			float height = -1.0;
+			bool contour = false;
+			if (p.size() >= 1) {
+				filename = p[0];
+			}
+			else return "heightmap: needs at least a heightmap file";
+			if (p.size() >= 2) {
+				height = toD(p[1]);
+			}
+			if (p.size() >= 3) {
+				if (p[2] == "true")
+					contour = true;
+				else if (p[2] == "false")
+					contour = false;
+				else return "heightmap: contour paramter not valid: "+p[2];
+			}
+			
+			std::vector<std::vector<float>> hm = loadHeightMap(filename);
+			manifold::MeshGL mesh =  heightmap2mesh(hm, height, contour);
+			//ExportMeshGL3MF("test.3mf", mesh);
+			m.push_back(manifold::Manifold(mesh));
 			if (verbose) std::cout << "heightmap: "<< manifoldError(m[m.size()-1].Status()) << std::endl;
-			std::vector<std::vector<float>> hm = loadHeightMap(t[1]);
-			manifold::MeshGL mesh =  heightmap2mesh(hm);
-			m.push_back(manifold::Manifold(mesh));			
 		}
 		else return "heightmap: no parameters";
 	}

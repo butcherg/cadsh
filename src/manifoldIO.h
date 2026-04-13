@@ -15,6 +15,7 @@ manifold::Manifold ImportMesh3MF(const std::string& filename);
 std::vector<manifold::Manifold> ImportMeshes3MF(const std::string& filename);
 
 bool ExportMesh3MF(const std::string& filename, const manifold::Manifold& mesh);
+bool ExportMeshGL3MF(const std::string& filename, const manifold::MeshGL &mesh);
 				
 bool ExportMeshes3MF(const std::string& filename, const std::vector<manifold::Manifold> meshes);
 

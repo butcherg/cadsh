@@ -73,7 +73,7 @@ manifold::MeshGL icosahedron()
 
 // heightmap:
 
-manifold::MeshGL heightmap2mesh(std::vector<std::vector<float>> hm)
+manifold::MeshGL heightmap2mesh(std::vector<std::vector<float>> hm, float height=-1.0, bool basecontour=false)
 {	
 	struct ht {
 		float h;  //height
@@ -136,41 +136,88 @@ manifold::MeshGL heightmap2mesh(std::vector<std::vector<float>> hm)
 		}
 	
 	//2. build base floor mesh:
-		//a. setHeight
-		for (unsigned y=0; y<h; y++) 
-			for (unsigned x=0; x<w; x++)
-				base[x][y].h = -1;
-		//b. buildVertices
-		for (unsigned y=0; y<h; y++) {
-			for (unsigned x=0; x<w; x++) {
-				base[x][y].i = addVertex(m,  (float) x, (float) y, base[x][y].h);
+		
+		if (basecontour) {
+			//a. setHeight
+			for (unsigned y=0; y<h; y++) 
+				for (unsigned x=0; x<w; x++)
+					base[x][y].h += height;
+			
+				//a. buildVertices
+			for (unsigned y=0; y<h; y++) {
+				for (unsigned x=0; x<w; x++) {
+					base[x][y].i = addVertex(m, (float) x, (float) y, base[x][y].h);
+				}
+			}
+			//b. fourTriangulate:;
+			//b1. add center vertices:
+			int centerVertexOffset = m.vertProperties.size()/3;
+			for (int y = 0; y < h-1; ++y) {
+				for (int x = 0; x < w-1; ++x) {
+					float x_center = x + 0.5f;
+					float y_center = y + 0.5f;
+					float z_center = (base[x][y].h + base[x][y+1].h + base[x+1][y].h + base[x+1][y+1].h) / 4.0f;
+					addVertex(m,  x_center, y_center, z_center );
+				}
+			}
+		
+			//b2. make four-triangle sets:
+			for (int y = 0; y < h - 1; ++y) {
+				for (int x = 0; x < w - 1; ++x) {
+					// Get indices of the four corners of the quad
+					unsigned topLeft = base[x][y].i;
+					unsigned topRight = base[x+1][y].i;
+					unsigned bottomLeft = base[x][y+1].i;
+					unsigned bottomRight = base[x+1][y+1].i;
+					unsigned int quadCenter = centerVertexOffset + y * (w - 1) + x;
+					
+					//winding is reverse from heightmap:
+					addTriangle(m, quadCenter, topLeft, bottomLeft);
+					addTriangle(m, quadCenter, topRight, topLeft );
+					addTriangle(m, quadCenter, bottomRight, topRight);
+					addTriangle(m, quadCenter, bottomLeft, bottomRight);
+				}
 			}
 		}
-		//c. centerTriangulate
-		unsigned center = addVertex(m,  (float) w/2, (float) h/2, base[0][0].h);
+		else { //!basecontour 
 		
-		//getEdgeIndices();
-			std::vector<unsigned> bee;
-			//along top (north) edge (x axis)
-			for(int x=0; x<w-1; x++)
-				bee.push_back(base[x][0].i);
-			//along right (east) edge (x=w-1)
-			for(int y=0; y<h-1; y++)
-				bee.push_back(base[w-1][y].i);
-			//along bottom (south) edge (y=h-1)
-			for(int x=w-1; x>=0; x--)
-				bee.push_back(base[x][h-1].i);
-			//along left (west) edge (y axis)
-			for(int y=h-2; y>=1; y--)
-				bee.push_back(base[0][y].i);
+			//a. setHeight
+			for (unsigned y=0; y<h; y++) 
+				for (unsigned x=0; x<w; x++)
+					base[x][y].h = height;
+			//b. buildVertices
+			for (unsigned y=0; y<h; y++) {
+				for (unsigned x=0; x<w; x++) {
+					base[x][y].i = addVertex(m,  (float) x, (float) y, base[x][y].h);
+				}
+			}
+			//c. centerTriangulate
+			unsigned center = addVertex(m,  (float) w/2, (float) h/2, base[0][0].h);
+		
+			//getEdgeIndices();
+				std::vector<unsigned> bee;
+				//along top (north) edge (x axis)
+				for(int x=0; x<w-1; x++)
+					bee.push_back(base[x][0].i);
+				//along right (east) edge (x=w-1)
+				for(int y=0; y<h-1; y++)
+					bee.push_back(base[w-1][y].i);
+				//along bottom (south) edge (y=h-1)
+				for(int x=w-1; x>=0; x--)
+					bee.push_back(base[x][h-1].i);
+				//along left (west) edge (y axis)
+				for(int y=h-2; y>=1; y--)
+					bee.push_back(base[0][y].i);
 			
-		for(int i=1; i<bee.size(); i++) 
-			addTriangle(m, center, bee[i], bee[i-1]);
-		int ic = bee.size()-1;
-		int jc = 0;
-		addTriangle(m, center, bee[jc], bee[ic]);
+			for(int i=1; i<bee.size(); i++) 
+				addTriangle(m, center, bee[i], bee[i-1]);
+			int ic = bee.size()-1;
+			int jc = 0;
+			addTriangle(m, center, bee[jc], bee[ic]);
+		}
 	
 	//3. connect the heightmap and base meshes:
+	
 		//a. heightmap getEdgeIndices
 		std::vector<unsigned> he;
 		//along top (north) edge (x axis)
@@ -185,6 +232,7 @@ manifold::MeshGL heightmap2mesh(std::vector<std::vector<float>> hm)
 		//along left (west) edge (y axis)
 		for(int y=h-2; y>=1; y--)
 			he.push_back(hmp[0][y].i);
+		
 		//b. base getEdgeIndices
 		std::vector<unsigned> be;
 		//along top (north) edge (x axis)
